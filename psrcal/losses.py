@@ -124,6 +124,7 @@ def ECE(log_probs, target, M=15, return_values=False):
     ave_accs = []
     ave_confs = []
     counts = []
+    limits_used = []
     for low, high in zip(lows, highs):
         ix = (low < confs) & (confs <= high)
         n = torch.sum(ix)
@@ -137,10 +138,11 @@ def ECE(log_probs, target, M=15, return_values=False):
         ave_accs.append(ave_acc.detach().numpy())
         ave_confs.append(ave_conf.detach().numpy())
         counts.append(n.detach().numpy())
+        limits_used.append([low, high])
         ece += n*torch.abs(ave_conf-ave_acc)
 
     if return_values:
-        return ece * 100/N, np.array(ave_accs), np.array(ave_confs), np.array(counts)
+        return ece * 100/N, np.array(ave_accs), np.array(ave_confs), np.array(counts), limits_used
     else:
         return ece * 100/N
 
@@ -183,6 +185,7 @@ def ECEbin(log_probs, target, M=15, return_values=False):
     prop2s = []
     avep2s = []
     counts = []
+    limits_used = []
     for low, high in zip(lows, highs):
         ix = (low < post2) & (post2 <= high)
         n = torch.sum(ix)
@@ -195,10 +198,11 @@ def ECEbin(log_probs, target, M=15, return_values=False):
         avep2s.append(avep2.detach().numpy())
         prop2s.append(prop2.detach().numpy())
         counts.append(n.detach().numpy())
+        limits_used.append([low, high])
         ece += n*torch.abs(avep2-prop2)
 
     if return_values:
-        return ece * 100/N, np.array(prop2s), np.array(avep2s), np.array(counts)
+        return ece * 100/N, np.array(prop2s), np.array(avep2s), np.array(counts), limits_used
     else:
         return ece * 100/N
 
@@ -222,25 +226,42 @@ def ECEbin_v2(log_probs, target, M=15):
     return torch.mean(torch.abs(probs2_cal-probs2_binned)) * 100
 
 
-def plot_reliability_diagram(ys, xs, counts, outfile=None, nbins=15, title=''):
+def plot_reliability_diagram(ys, xs, counts, limits, outfile=None, title='', figsize=None):
+    """
+    On the left, a reliability diagram which contains exactly the information used to compute ECE
+    On the right, the standard reliability diagram.
+    """
+    if figsize is None:
+        figsize = (9,3)
+    fig, [ax1, ax2] = plt.subplots(1,2,figsize=figsize)
 
-    plt.figure()
-    plt.plot(xs, ys, "-*", label="prop_class2")
-    plt.plot(xs, np.abs(xs-ys), "-*", label="abs(prop_class2-ave_post)")
-    plt.plot(xs, counts/np.sum(counts), "-*", label="fraction_of_samples")
-    plt.plot(xs, counts/np.sum(counts)*np.abs(xs-ys), "-*", label="n/N * abs(prop_class2-ave_post)")
-    #for acc, conf, count in zip(ys, confs, counts):
-    #  plt.annotate(str(count),  xy=(conf, np.abs(xs-ys)))
-    plt.plot([0,1],[0,1],':k')
-    plt.xlabel("ave_post")
-    plt.ylim(0,1)
-    plt.xlim(0,1)
-    plt.legend(bbox_to_anchor=(1, 1))
-    plt.title(title)
+    gaps = np.abs(xs-ys)
+    frac = counts/np.sum(counts)
+
+    ax1.plot(xs, ys, "-*", label="freq_class2")
+    ax1.plot(xs, gaps, "-*", label="gap = abs(freq_class2-ave_post_class2)")
+    ax1.plot(xs, frac, "-*", label="fraction_of_samples = n/N")
+    ax1.plot(xs, frac * gaps, "-*", label="fraction_of_samples * gap")
+    ax1.plot([0,1],[0,1],':k')
+    ax1.set_xlabel("ave_post_class2")
+    ax1.set_ylim(0,1)
+    ax1.set_xlim(0,1)
+    ax1.legend(bbox_to_anchor=(1, 1))
+    ece = np.sum(frac * gaps) * 100
+    ax1.set_title(f"{title} (ECE={ece:.1f})")
+
+    lows = np.array(limits)[:,0]
+    highs = np.array(limits)[:,1]
+    ax2.bar(lows,ys, width=highs-lows, align='edge', edgecolor='k')
+    ax2.plot([0,1], [0,1], 'k:')
+    ax2.set_xlim(0,1)
+    ax2.set_ylim(0,1)
+    ax2.set_xlabel("binned_post_class2")
+    ax2.set_ylabel("freq_class2")
+    
+    plt.tight_layout()
     if outfile is not None:
         plt.savefig(outfile)
-
-
 
 
 def shift(loss, off):
