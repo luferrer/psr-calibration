@@ -34,6 +34,11 @@ class AffineCal(LBFGS_Objective):
         self.scores = scores
         self.labels = labels
 
+    def train(self, quiet=True):
+
+        return lbfgs(self, 100, quiet=quiet)
+
+
     def calibrate(self, scores):
         self.cal_scores = self.temp * scores + self.bias
         if self.priors is not None:
@@ -79,15 +84,21 @@ class HistogramBinningCal():
             raise Exception("Histogram binning only implemented for binary classification")
 
         # The method assumes the scores are log probs, but we bin the probs, so take the exp.
-        scores = torch.exp(scores)
-        labels = labels.double()
+        self.scores = torch.exp(scores)
+        self.labels = labels.double()
+        self.M = M
+
+
+    def train(self):
 
         # Take the second score for binning
-        if scores.ndim == 2:
-            scores = scores[:,1]
+        if self.scores.ndim == 2:
+            scores = self.scores[:,1]
+        else:
+            scores = self.scores
 
         # Generate intervals
-        limits = np.linspace(0, 1, num=M+1)
+        limits = np.linspace(0, 1, num=self.M+1)
         self.lows, self.highs = limits[:-1], limits[1:]
         prop2s = []
         post2s = []
@@ -100,8 +111,9 @@ class HistogramBinningCal():
         for low, high in zip(self.lows, self.highs):
             ix = (low < scores) & (scores <= high)
             n = torch.sum(ix)
-            self.cal_transform.append(torch.mean(labels[ix]) if n!=0 else 0.0)
+            self.cal_transform.append(torch.mean(self.labels[ix]) if n!=0 else 0.0)
             self.ave_score_per_bin.append(torch.mean(scores[ix]) if n!= 0 else 0.0)
+
 
     def calibrate(self, scores):
 
@@ -140,14 +152,15 @@ def calibrate(trnscores, trnlabels, tstscores, calclass, quiet=True, **kwargs):
 
     if calclass == HistogramBinningCal:
 
+        obj.train()
         return obj.calibrate(tstscores), [obj.binned_scores, obj.lows, obj.highs, obj.cal_transform, obj.ave_score_per_bin]
 
     else:
 
-        paramvec, value, curve, success = lbfgs(obj, 100, quiet=quiet)
+        paramvec, value, curve, success = obj.train(quiet=quiet)
         
         if not success:
-            raise Exception("LBFGS was unable to converge")
+           raise Exception("LBFGS was unable to converge")
             
         return obj.calibrate(tstscores), [obj.temp, obj.bias] if obj.has_bias else [obj.temp]
 
