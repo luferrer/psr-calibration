@@ -1,5 +1,4 @@
 import numpy as np
-from IPython import embed
 from scipy.special import softmax
 import torch
 from psrcal.utils import onehot_encode, check_label

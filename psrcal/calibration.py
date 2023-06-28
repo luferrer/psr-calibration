@@ -1,7 +1,6 @@
 import torch
 from psrcal.optim.vecmodule import Parameter, LBFGS_Objective, lbfgs
 from psrcal import losses 
-from IPython import embed
 import numpy as np
 
 class AffineCal(LBFGS_Objective):
