@@ -8,7 +8,7 @@ This repository contains the code for doing calibration on multi-class and binar
 pip install psrcal
 ```
 
-When you do that, torch, matplotlib and other libraries will also be installed, unless you already have the required versions in your system.
+When you do that, torch, matplotlib and other libraries will also be installed, unless you already have the required versions in your system. It does not install joblib and ternary, which are only needed to run the scripts in the experiments dir. If you want to run those scripts, you can install those two packages separately. 
 
 Alternatively, if you want the latest version of the code, you can:
 
@@ -16,7 +16,7 @@ Alternatively, if you want the latest version of the code, you can:
 
    ```git clone https://github.com/luferrer/psr-calibration.git```
 
-2. Install the requirements:  
+2. Install the requirements (this does install joblib and ternary since it assumes you are probably cloning the repo in order to run the scripts inside the experiments dir):  
    
    ```pip install -r requirements.txt```
    
