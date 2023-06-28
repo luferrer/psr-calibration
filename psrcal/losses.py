@@ -238,26 +238,26 @@ def plot_reliability_diagram(ys, xs, counts, limits, outfile=None, title='', fig
     gaps = np.abs(xs-ys)
     frac = counts/np.sum(counts)
 
-    ax1.plot(xs, ys, "-*", label="freq_class2")
-    ax1.plot(xs, gaps, "-*", label="gap = abs(freq_class2-ave_post_class2)")
-    ax1.plot(xs, frac, "-*", label="fraction_of_samples = n/N")
-    ax1.plot(xs, frac * gaps, "-*", label="fraction_of_samples * gap")
-    ax1.plot([0,1],[0,1],':k')
-    ax1.set_xlabel("ave_post_class2")
-    ax1.set_ylim(0,1)
-    ax1.set_xlim(0,1)
-    ax1.legend(bbox_to_anchor=(1, 1))
+    ax2.plot(xs, ys, "-*", label="freq_class2")
+    ax2.plot(xs, gaps, "-*", label="gap = abs(freq_class2-ave_post_class2)")
+    ax2.plot(xs, frac, "-*", label="fraction_of_samples = n/N")
+    ax2.plot(xs, frac * gaps, "-*", label="fraction_of_samples * gap")
+    ax2.plot([0,1],[0,1],':k')
+    ax2.set_xlabel("ave_post_class2")
+    ax2.set_ylim(0,1)
+    ax2.set_xlim(0,1)
+    ax2.legend(bbox_to_anchor=(1, 1))
     ece = np.sum(frac * gaps) * 100
-    ax1.set_title(f"{title} (ECE={ece:.1f})")
 
     lows = np.array(limits)[:,0]
     highs = np.array(limits)[:,1]
-    ax2.bar(lows,ys, width=highs-lows, align='edge', edgecolor='k')
-    ax2.plot([0,1], [0,1], 'k:')
-    ax2.set_xlim(0,1)
-    ax2.set_ylim(0,1)
-    ax2.set_xlabel("binned_post_class2")
-    ax2.set_ylabel("freq_class2")
+    ax1.bar(lows,ys, width=highs-lows, align='edge', edgecolor='k')
+    ax1.plot([0,1], [0,1], 'k:')
+    ax1.set_xlim(0,1)
+    ax1.set_ylim(0,1)
+    ax1.set_xlabel("binned_post_class2")
+    ax1.set_ylabel("freq_class2")
+    ax1.set_title(f"{title} (ECE={ece:.1f})")
     
     plt.tight_layout()
     if outfile is not None:
