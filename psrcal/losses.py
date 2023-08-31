@@ -168,7 +168,7 @@ def ECE_v2(log_probs, target, M=15):
     return torch.mean(torch.abs(probs2_cal-probs2_binned)) * 100
 
 
-def ECEbin(log_probs, target, M=15, return_values=False):
+def ECEbin(log_probs, target, M=15, return_values=False, l2norm=False):
     """"Computes the binary ECE score"""
 
     probs = torch.exp(log_probs)
@@ -198,7 +198,10 @@ def ECEbin(log_probs, target, M=15, return_values=False):
         prop2s.append(prop2.detach().numpy())
         counts.append(n.detach().numpy())
         limits_used.append([low, high])
-        ece += n*torch.abs(avep2-prop2)
+        if l2norm:
+            ece += n*(avep2-prop2)**2
+        else:
+            ece += n*torch.abs(avep2-prop2)
 
     if return_values:
         return ece * 100/N, np.array(prop2s), np.array(avep2s), np.array(counts), limits_used
