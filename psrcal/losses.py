@@ -41,7 +41,10 @@ def LogLoss(log_probs, labels, norm=True, priors=None):
     # times the external prior
     ii = torch.arange(len(labels))
     losses = -log_probs[ii, labels]
-    score  = torch.mean(weights*losses)
+    wlosses = weights*losses
+    # The line below is to turn to 0 potential infinite losses when the weight is 0.
+    wlosses[weights==0] = 0
+    score  = torch.mean(wlosses)
 
     return score / norm_factor
 
